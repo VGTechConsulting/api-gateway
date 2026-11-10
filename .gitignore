@@ -1,0 +1,33 @@
+# Secrets and local config: only the *.example files are committed.
+.env
+.env.*
+!.env.example
+config.yaml
+
+# Runtime state: SQLite database and request logs.
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+/*.jsonl
+
+# Python and tooling caches.
+.venv/
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.import_linter_cache/
+.coverage
+htmlcov/
+
+# Build output.
+build/
+dist/
+*.egg-info/
+
+# OS and editor files.
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,43 @@
+[importlinter]
+root_package = gate
+include_external_packages = True
+
+[importlinter:contract:layers]
+name = Dependencies point inward
+type = layers
+layers =
+    gate.main
+    gate.adapters
+    gate.app
+    gate.providers
+    gate.domain
+
+[importlinter:contract:domain-stdlib]
+name = Domain imports the standard library only
+type = forbidden
+source_modules =
+    gate.domain
+    gate.providers
+forbidden_modules =
+    fastapi
+    starlette
+    httpx
+    pydantic
+    yaml
+    uvicorn
+    sqlite3
+    asyncio
+
+[importlinter:contract:app-no-frameworks]
+name = Application layer is framework-free
+type = forbidden
+source_modules =
+    gate.app
+forbidden_modules =
+    fastapi
+    starlette
+    httpx
+    pydantic
+    yaml
+    uvicorn
+    sqlite3

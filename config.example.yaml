@@ -1,0 +1,92 @@
+# api-gateway configuration.
+#
+# This file is intentionally INVALID until you replace every REQUIRED rate with a
+# verified price. Record the provider pricing-page link and the date you checked
+# next to each entry. `api-gateway check-config` refuses placeholders.
+
+server:
+  host: 127.0.0.1
+  port: 8787
+ui:                            # read-only report UI (api-gateway ui)
+  host: 127.0.0.1
+  port: 8789
+  recent_requests: 100         # rows on the requests page; at most 1000
+storage:
+  sqlite_path: ./api-gateway.db
+  request_log: stdout          # or a file path
+
+defaults:
+  tpm: 200000                  # all token categories; estimated admission quota
+  rpm: 60
+
+limits:
+  max_request_bytes: 33554432
+  max_buffer_bytes: 16777216
+  upstream_timeout_s: 600      # idle read timeout between upstream bytes
+  connect_timeout_s: 10
+  shutdown_grace_s: 25
+
+deployments:
+  - name: anthropic-direct
+    format: anthropic
+    provider: anthropic
+    base_url: https://api.anthropic.com
+    api_key_env: ANTHROPIC_API_KEY
+    region: us
+  - name: deepseek
+    format: anthropic
+    provider: deepseek
+    base_url: https://api.deepseek.com/anthropic
+    api_key_env: DEEPSEEK_API_KEY
+    region: cn
+  # Benchmarks and local tests (docker compose --profile bench up):
+  # - name: mock
+  #   format: anthropic
+  #   provider: mock
+  #   base_url: http://mock-upstream:9999
+  #   api_key_env: MOCK_API_KEY       # any non-empty value
+  #   region: local
+
+aliases:                       # model name as sent by the client -> ordered deployments
+  claude-sonnet-5-5: [anthropic-direct]
+  deepseek-flash: [deepseek]             # deepseek-v4-flash is a retired legacy alias
+  # mock-model: [mock]
+
+prices:                        # deployment -> requested model -> USD per million tokens
+  anthropic-direct:
+    claude-sonnet-5-5:         # source: <pricing page URL>, checked on <YYYY-MM-DD>
+      pricing_mode: metered
+      input: REQUIRED
+      output: REQUIRED
+      cache_read: REQUIRED
+      cache_write_5m: REQUIRED
+      cache_write_1h: REQUIRED
+  deepseek:
+    deepseek-flash:            # source: <pricing page URL>, checked on <YYYY-MM-DD>
+      pricing_mode: metered
+      input: REQUIRED
+      output: REQUIRED
+      cache_read: REQUIRED
+      cache_write_5m: null     # unsupported category, not an unset price
+      cache_write_1h: null
+  # Explicit free mode assigns zero monetary cost at the gateway (still rate-limited):
+  # mock:
+  #   mock-model: {pricing_mode: free, input: 0, output: 0, cache_read: 0, cache_write_5m: 0, cache_write_1h: 0}
+
+enforcement:                   # observe | enforce per policy; teams may override
+  default: {allowlist: enforce, rate_limits: enforce, budgets: enforce}
+
+teams:
+  platform: {budget_usd: 500, period: month}
+  research: {budget_usd: 200, period: month, enforcement: {budgets: observe}}
+
+detect:
+  on_error: open
+  categories:
+    private_key: block
+    card_number: block
+    cloud_key: flag
+    api_token: flag
+
+logging:
+  session_headers: [x-session-id, x-claude-code-session-id]

@@ -1,0 +1,12 @@
+# Allowlist: the build context contains only what the Dockerfile copies, so secrets,
+# local config, databases and caches never reach the Docker daemon or build cache.
+*
+!pyproject.toml
+!uv.lock
+!README.md
+!gate/
+!bench/
+
+# Drop bytecode and caches inside the allowed directories.
+**/__pycache__
+**/*.py[cod]
